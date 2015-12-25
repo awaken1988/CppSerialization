@@ -10,6 +10,10 @@
 
 #include <string>
 #include <map>
+#include <iostream>
+#include <type_traits>
+
+#include "SerializeConverters.h"
 
 	namespace cppserialize {
 
@@ -18,34 +22,139 @@
 
 	class SerializeBase {
 	public:
-		SerializeBase();
-		virtual ~SerializeBase();
+		SerializeBase()
+		{
+
+		}
+
+		virtual ~SerializeBase()
+		{
+
+		}
 
 		virtual string serialize_get() = 0;
+
+		static const bool is_serializeable = true;
+	};
+
+
+
+	struct ItemWrapperBase
+	{
+		virtual ~ItemWrapperBase(){};
+		virtual string get() = 0;
+	};
+
+	template<class T>
+	struct ItemWrapper : public ItemWrapperBase
+	{
+		T* obj;
+		virtual string get()
+		{
+			return external_converter_get<T>(*obj);
+		}
+	};
+
+	template<>
+	struct ItemWrapper<SerializeBase> : public ItemWrapperBase
+	{
+		SerializeBase* obj;
+		virtual string get()
+		{
+			return obj->serialize_get();
+		}
 	};
 
 
 	class SerializeItem: public SerializeBase {
 	public:
-		template<class E> void serialize_set(string item_name, E* item)
+		SerializeItem(){}
+		~SerializeItem() {}
+
+
+		template<	typename E,
+					typename = typename std::enable_if<   std::is_base_of<SerializeBase, E>::value   >::type>
+		void serialize_set(string item_name, E* item)
 		{
-			m_content[item_name] = item;
+			ItemWrapper<SerializeBase>* item_wrapper = new ItemWrapper<SerializeBase>();
+			item_wrapper->obj = item;
+			m_content[item_name] = item_wrapper;
+		}
+
+		template<	typename E,
+					typename = typename std::enable_if<   !std::is_base_of<SerializeBase, E>::value   >::type,
+					typename = void>
+		void serialize_set(string item_name, E* item)
+		{
+			ItemWrapper<E>* item_wrapper = new ItemWrapper<E>();
+			item_wrapper->obj = item;
+			m_content[item_name] = item_wrapper;
 		}
 
 		string serialize_get()
 		{
-			string ret;
+			string ret="xyz={";
+
 
 			for(auto i: m_content) {
-				ret += i.first + "=" + i.second->serialize_get();
+				string child_val = i.second->get();
+
+				cout << "get item " << i.first << "-" << child_val << endl;
+				ret += i.first + "=" + child_val ;
 			}
 
-			return ret;
+			return ret+"} ";
 		}
 	protected:
-		map<string, SerializeBase*> m_content;
+		map<string, ItemWrapperBase*> m_content;
 	};
+
+
+
+
 
 } /* namespace cppserialize */
 
 #endif /* SERIALIZEBASE_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//	template<typename E> void SerializeItem::serialize_set(string item_name,
+	//							std::enable_if<std::is_base_of<SerializeBase,E>::value,E>::type* item)
+	//	{
+	//		if( nullptr != dynamic_cast<SerializeBase*>((void*)item) )
+	//		{
+	//			ItemWrapper<SerializeBase>* item_wrapper = new ItemWrapper<SerializeBase>();
+	//			item_wrapper->obj = item;
+	//			m_content[item_name] = item_wrapper;
+	//		}
+	//		else
+	//		{
+	//			ItemWrapper<E>* item_wrapper = new ItemWrapper<E>();
+	//			item_wrapper->obj = item;
+	//			m_content[item_name] = item_wrapper;
+	//		}
+	//	}

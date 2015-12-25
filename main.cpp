@@ -16,6 +16,11 @@ using namespace std;
 class Class1 : public cppserialize::SerializeItem
 {
 public:
+	Class1()
+	{
+		serialize_set("x1", &x1);
+	}
+
 	int x1;
 };
 
