@@ -1,0 +1,16 @@
+<CppSerialize>
+    <SerialObject>
+        <SerialObject name="m_color">
+            <CustomObject name="b">255</CustomObject>
+            <CustomObject name="g">200</CustomObject>
+            <CustomObject name="r">100</CustomObject>
+        </SerialObject>
+        <SerialObject name="m_point">
+            <CustomObject name="x">340</CustomObject>
+            <CustomObject name="y">120</CustomObject>
+        </SerialObject>
+        <CustomObject name="m_some_double_val">2.34</CustomObject>
+        <CustomObject name="m_some_float_val">1.23</CustomObject>
+        <CustomObject name="m_some_string_val">serialization wooorks</CustomObject>
+    </SerialObject>
+</CppSerialize>

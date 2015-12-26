@@ -10,24 +10,40 @@
 using namespace std;
 
 #include "SerializeBase.h"
+#include "tinyxml2.h"
+using namespace tinyxml2;
 
 
-
-class Class1 : public cppserialize::SerializeItem
+class Point : public cppserialize::SerializeItem
 {
 public:
-	Class1()
+	Point()
 	{
-		serialize_set("x1", &x1);
+		x = 340;
+		y = 120;
+
+		serialize_set("x", &x);
+		serialize_set("y", &y);
 	}
 
-	int x1;
+	int x, y;
 };
 
-class Class2 : public cppserialize::SerializeItem
+class Color : public cppserialize::SerializeItem
 {
 public:
-	int x2;
+	Color()
+	{
+		r = 100;
+		g = 200;
+		b = 255;
+
+		serialize_set("r", &r);
+		serialize_set("g", &g);
+		serialize_set("b", &b);
+	}
+
+	unsigned char r, g, b;
 };
 
 class MyClass : public cppserialize::SerializeItem
@@ -35,21 +51,57 @@ class MyClass : public cppserialize::SerializeItem
 public:
 	MyClass()
 	{
-		serialize_set("m_class1", &m_class1);
-		serialize_set("m_class2", &m_class2);
+		m_some_float_val  = 1.23;
+		m_some_double_val = 2.34;
+		m_some_string_val = "serialization wooorks";
+
+		serialize_set("m_point", &m_point);
+		serialize_set("m_color", &m_color);
+
+		serialize_set("m_some_float_val", &m_some_float_val);
+		serialize_set("m_some_double_val", &m_some_double_val);
+		serialize_set("m_some_string_val", &m_some_string_val);
 	}
-	Class1 m_class1;
-	Class2 m_class2;
-	int xmy;
+	Point m_point;
+	Color m_color;
+	float 	m_some_float_val;
+	double 	m_some_double_val;
+	string  m_some_string_val;
 };
 
 
 int main() {
+
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
 	MyClass test;
-	cout<<test.serialize_get()<<endl;
+
+	test.serialize_get()->SaveFile("serialized_object.xml");
 
 
 	return 0;
 }
+
+
+
+
+/*
+	testcode for tinyxml2
+
+	XMLDocument doc;
+
+	XMLElement* elem_ptr = doc.NewElement("node0");
+	doc.InsertEndChild(elem_ptr);
+	elem_ptr->SetAttribute("isLecker", true);
+
+	for(string i: {"hallo", "das", "ist", "ein", "test"}) {
+	XMLElement* currElem = doc.NewElement(i.c_str());
+
+	currElem->SetText("Hallo wie gehts denn so");
+
+	elem_ptr->InsertEndChild( currElem );
+
+	doc.SaveFile("blaablubb.xml", false);
+
+	}
+ */

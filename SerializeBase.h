@@ -2,7 +2,7 @@
  * SerializeBase.h
  *
  *  Created on: 18 Dec 2015
- *      Author: martin
+ *      Author: Martin K
  */
 
 #ifndef SERIALIZEBASE_H_
@@ -12,13 +12,18 @@
 #include <map>
 #include <iostream>
 #include <type_traits>
+#include "tinyxml2.h"
 
 #include "SerializeConverters.h"
 
-	namespace cppserialize {
+namespace cppserialize {
 
 	using namespace std;
+	using namespace tinyxml2;
 
+	constexpr auto NODE_NAME_SERIALOBJ = "SerialObject";
+	constexpr auto NODE_NAME_CUSTOMOBJ  = "CustomObject";
+	constexpr auto ATTRIB_OBJNAME 			= "name";
 
 	class SerializeBase {
 	public:
@@ -32,7 +37,8 @@
 
 		}
 
-		virtual string serialize_get() = 0;
+		virtual XMLElement* serialize_get(XMLElement* aElement) = 0;
+		virtual XMLDocument* serialize_get() = 0;
 
 		static const bool is_serializeable = true;
 	};
@@ -42,16 +48,23 @@
 	struct ItemWrapperBase
 	{
 		virtual ~ItemWrapperBase(){};
-		virtual string get() = 0;
+		virtual XMLElement* get(XMLElement* _outerElement) = 0;
 	};
 
 	template<class T>
 	struct ItemWrapper : public ItemWrapperBase
 	{
 		T* obj;
-		virtual string get()
+		virtual XMLElement* get(XMLElement* _outerElement)
 		{
-			return external_converter_get<T>(*obj);
+			XMLDocument* doc =  _outerElement->GetDocument();
+			XMLElement* currElem =  doc->NewElement(NODE_NAME_CUSTOMOBJ);
+			_outerElement->InsertEndChild(currElem);
+
+			string value = external_converter_get<T>(*obj);
+			currElem->SetText(value.c_str());
+
+			return currElem;
 		}
 	};
 
@@ -59,9 +72,9 @@
 	struct ItemWrapper<SerializeBase> : public ItemWrapperBase
 	{
 		SerializeBase* obj;
-		virtual string get()
+		virtual XMLElement* get(XMLElement* _outerElement)
 		{
-			return obj->serialize_get();
+			return obj->serialize_get(_outerElement);
 		}
 	};
 
@@ -91,19 +104,41 @@
 			m_content[item_name] = item_wrapper;
 		}
 
-		string serialize_get()
+		//TODO: return shared_ptr
+		XMLDocument* serialize_get()
 		{
-			string ret="xyz={";
+			XMLDocument* doc = new XMLDocument();
 
+			XMLElement* root = doc->NewElement("CppSerialize");
+			doc->InsertEndChild(root);
+
+			XMLElement* childs = serialize_get(root);
+
+
+			return doc;
+		}
+
+		XMLElement* serialize_get(XMLElement* _outerElement)
+		{
+			XMLDocument* doc =  _outerElement->GetDocument();
+			XMLElement* currElem =  doc->NewElement(NODE_NAME_SERIALOBJ);
+			_outerElement->InsertEndChild(currElem);
+
+			//TODO: insert class name optionally
 
 			for(auto i: m_content) {
-				string child_val = i.second->get();
+				string object_name = i.first;
 
-				cout << "get item " << i.first << "-" << child_val << endl;
-				ret += i.first + "=" + child_val ;
+				XMLElement* childElement = i.second->get(currElem);
+
+				childElement->SetAttribute(ATTRIB_OBJNAME, object_name.c_str());
+
+
+//				cout << "get item " << i.first << "-" << child_val << endl;
+
 			}
 
-			return ret+"} ";
+			return currElem;
 		}
 	protected:
 		map<string, ItemWrapperBase*> m_content;
