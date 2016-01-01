@@ -7,6 +7,7 @@
 //============================================================================
 
 #include <iostream>
+#include <vector>
 using namespace std;
 
 #include "SerializeBase.h"
@@ -54,6 +55,9 @@ public:
 		m_some_float_val  = 1.23;
 		m_some_double_val = 2.34;
 		m_some_string_val = "serialization wooorks";
+		m_int_vector.push_back(1);
+		m_int_vector.push_back(2);
+		m_int_vector.push_back(4);
 
 		serialize_set("m_point", &m_point);
 		serialize_set("m_color", &m_color);
@@ -61,12 +65,14 @@ public:
 		serialize_set("m_some_float_val", &m_some_float_val);
 		serialize_set("m_some_double_val", &m_some_double_val);
 		serialize_set("m_some_string_val", &m_some_string_val);
+		serialize_set("m_int_vector", &m_int_vector);
 	}
 	Point m_point;
 	Color m_color;
 	float 	m_some_float_val;
 	double 	m_some_double_val;
 	string  m_some_string_val;
+	vector<int> m_int_vector;
 };
 
 

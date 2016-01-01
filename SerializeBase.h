@@ -11,6 +11,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <vector>
 #include <type_traits>
 #include "tinyxml2.h"
 
@@ -23,8 +24,27 @@ namespace cppserialize {
 
 	constexpr auto NODE_NAME_SERIALOBJ = "SerialObject";
 	constexpr auto NODE_NAME_CUSTOMOBJ  = "CustomObject";
+	constexpr auto NODE_NAME_ARRAY		= "CustomArray";
 	constexpr auto ATTRIB_OBJNAME 			= "name";
 
+
+
+
+
+
+
+
+
+
+	/*
+	 * 	SerializeBase
+	 *
+	 * 		A common interface for Serializeable Objects
+	 *
+	 * 		Note:
+	 * 			Please do not inherit directly from SerialBase
+	 * 			use SerializeItem
+	 */
 	class SerializeBase {
 	public:
 		SerializeBase()
@@ -45,6 +65,21 @@ namespace cppserialize {
 
 
 
+
+
+
+
+
+
+
+	/*
+	 * 	ItemWrapperBase
+	 *
+	 * 		With this abstraction we can distinguish between the following cases
+	 * 			- serialize of a class based on SerialBase
+	 * 			- serialize of a scalar types
+	 * 			- serialize of array types
+	 */
 	struct ItemWrapperBase
 	{
 		virtual ~ItemWrapperBase(){};
@@ -78,7 +113,43 @@ namespace cppserialize {
 		}
 	};
 
+	template<typename T>
+	struct ItemWrapper<vector<T>> : public ItemWrapperBase
+	{
+		vector<T>* obj;
+		virtual XMLElement* get(XMLElement* _outerElement)
+		{
+			XMLDocument* doc =  _outerElement->GetDocument();
+			XMLElement* currElem =  doc->NewElement(NODE_NAME_ARRAY);
+			_outerElement->InsertEndChild(currElem);
 
+			for(auto& i: *obj) {
+				XMLElement* array_item = doc->NewElement(NODE_NAME_CUSTOMOBJ);
+				currElem->InsertEndChild(array_item);
+
+				string value = external_converter_get<T>(i);
+				array_item->SetText(value.c_str());
+			}
+
+
+			return currElem;
+		}
+	};
+
+
+
+
+
+
+
+
+
+
+	/*
+	 *
+	 *	SerializeItem
+	 *
+	 */
 	class SerializeItem: public SerializeBase {
 	public:
 		SerializeItem(){}
