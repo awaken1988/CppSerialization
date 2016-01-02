@@ -8,12 +8,31 @@
 
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 #include "SerializeBase.h"
 #include "tinyxml2.h"
 using namespace tinyxml2;
 
+
+string read_file(string filename)
+{
+	string ret;
+	ifstream file(filename);
+	stringstream buffer;
+
+	if( !file.good() ) {
+		cout<<"error: cannot open "<<filename<<endl;
+		return ret;
+	}
+
+	buffer<<file.rdbuf();
+
+	return buffer.str();
+
+}
 
 class Point : public cppserialize::SerializeItem
 {
@@ -59,13 +78,13 @@ public:
 		m_int_vector.push_back(2);
 		m_int_vector.push_back(4);
 
-		serialize_set("m_point", &m_point);
-		serialize_set("m_color", &m_color);
+		//serialize_set("m_point", &m_point);
+		//serialize_set("m_color", &m_color);
 
 		serialize_set("m_some_float_val", &m_some_float_val);
 		serialize_set("m_some_double_val", &m_some_double_val);
 		serialize_set("m_some_string_val", &m_some_string_val);
-		serialize_set("m_int_vector", &m_int_vector);
+		//serialize_set("m_int_vector", &m_int_vector);
 	}
 	Point m_point;
 	Color m_color;
@@ -82,8 +101,15 @@ int main() {
 
 	MyClass test;
 
-	test.serialize_get()->SaveFile("serialized_object.xml");
-
+	if(false)
+	{	//serialization example
+		test.serialize_get()->SaveFile("serialized_object.xml");
+	}
+	else
+	{	//deserilization example
+		string xml = read_file("serialized_object.xml");
+		test.serialize_set(xml);
+	}
 
 	return 0;
 }

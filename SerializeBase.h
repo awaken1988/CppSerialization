@@ -59,6 +59,8 @@ namespace cppserialize {
 
 		virtual XMLElement* serialize_get(XMLElement* aElement) = 0;
 		virtual XMLDocument* serialize_get() = 0;
+		virtual bool serialize_set(XMLElement* aElement) = 0;
+		virtual bool serialize_set(string xmlContent) = 0;
 
 		static const bool is_serializeable = true;
 	};
@@ -84,6 +86,7 @@ namespace cppserialize {
 	{
 		virtual ~ItemWrapperBase(){};
 		virtual XMLElement* get(XMLElement* _outerElement) = 0;
+		virtual bool set(XMLElement* _item) = 0;
 	};
 
 	template<class T>
@@ -101,6 +104,13 @@ namespace cppserialize {
 
 			return currElem;
 		}
+
+		virtual bool set(XMLElement* _item)
+		{
+			string value(_item->GetText());
+
+			return external_converter_set<T>(value, *this->obj );
+		}
 	};
 
 	template<>
@@ -110,6 +120,11 @@ namespace cppserialize {
 		virtual XMLElement* get(XMLElement* _outerElement)
 		{
 			return obj->serialize_get(_outerElement);
+		}
+
+		virtual bool set(XMLElement* _item)
+		{
+			return obj->serialize_set(_item);
 		}
 	};
 
@@ -131,8 +146,12 @@ namespace cppserialize {
 				array_item->SetText(value.c_str());
 			}
 
-
 			return currElem;
+		}
+
+		virtual bool set(XMLElement* _item)
+		{
+			return false; /* not implemented */
 		}
 	};
 
@@ -211,6 +230,42 @@ namespace cppserialize {
 
 			return currElem;
 		}
+
+		virtual bool serialize_set(XMLElement* aElement)
+		{
+			for(XMLElement* iChild = aElement->FirstChildElement();
+					iChild != nullptr; iChild = iChild->NextSiblingElement()) {
+
+				const char* key = iChild->Attribute(ATTRIB_OBJNAME);
+
+				auto item_iter = m_content.find( key );
+
+				if( item_iter == m_content.end() )
+					return false;
+
+
+				if( !item_iter->second->set( iChild ) )
+					return false;
+			}
+
+			return true;	/* all ok */
+		}
+
+		virtual bool serialize_set(string xmlContent)
+		{
+			XMLDocument doc;
+
+			//FIXME: check for xml errors
+			if( XML_NO_ERROR != doc.Parse(xmlContent.c_str()) )
+				return false;
+
+			return this->serialize_set(doc.RootElement()->FirstChildElement());
+		}
+
+
+
+
+
 	protected:
 		map<string, ItemWrapperBase*> m_content;
 	};

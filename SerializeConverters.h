@@ -13,6 +13,20 @@
 #include "tinyxml2.h"
 using namespace std;
 
+
+
+
+
+
+
+/*
+ *
+ * getter function
+ *
+ * 	get a string represantion from a type
+ *
+ */
+
 //!Default converter using stringstream
 template<typename T> string external_converter_get(const T& value)
 {
@@ -45,6 +59,32 @@ template<> string external_converter_get<int>(const int& value)
 }
 */
 
+
+
+
+
+
+
+
+
+
+/*
+ *
+ * setter function
+ *
+ * 	transform a string to a value
+ *
+ */
+
+template<typename T> bool external_converter_set(const string& value, T& out )
+{
+	std::stringstream ss;
+
+	ss<<value;
+	ss>>out;
+
+	return true; /* if all ok return true */
+}
 
 
 
