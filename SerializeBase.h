@@ -151,7 +151,17 @@ namespace cppserialize {
 
 		virtual bool set(XMLElement* _item)
 		{
-			return false; /* not implemented */
+			for(XMLElement* iChild=_item->FirstChildElement();
+					iChild != nullptr; iChild = iChild->NextSiblingElement()) {
+
+				string value(iChild->GetText());
+				T deserialized;
+				if( !external_converter_set<T>(value, deserialized ) )
+					return false;
+				obj->push_back(deserialized);
+			}
+
+			return true;
 		}
 	};
 
@@ -177,7 +187,7 @@ namespace cppserialize {
 
 		template<	typename E,
 					typename = typename std::enable_if<   std::is_base_of<SerializeBase, E>::value   >::type>
-		void serialize_set(string item_name, E* item)
+		void serialize_add(string item_name, E* item)
 		{
 			ItemWrapper<SerializeBase>* item_wrapper = new ItemWrapper<SerializeBase>();
 			item_wrapper->obj = item;
@@ -187,7 +197,7 @@ namespace cppserialize {
 		template<	typename E,
 					typename = typename std::enable_if<   !std::is_base_of<SerializeBase, E>::value   >::type,
 					typename = void>
-		void serialize_set(string item_name, E* item)
+		void serialize_add(string item_name, E* item)
 		{
 			ItemWrapper<E>* item_wrapper = new ItemWrapper<E>();
 			item_wrapper->obj = item;

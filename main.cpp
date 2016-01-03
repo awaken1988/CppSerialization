@@ -42,8 +42,8 @@ public:
 		x = 340;
 		y = 120;
 
-		serialize_set("x", &x);
-		serialize_set("y", &y);
+		serialize_add("x", &x);
+		serialize_add("y", &y);
 	}
 
 	int x, y;
@@ -58,9 +58,9 @@ public:
 		g = 200;
 		b = 255;
 
-		serialize_set("r", &r);
-		serialize_set("g", &g);
-		serialize_set("b", &b);
+		serialize_add("r", &r);
+		serialize_add("g", &g);
+		serialize_add("b", &b);
 	}
 
 	unsigned char r, g, b;
@@ -78,13 +78,13 @@ public:
 		m_int_vector.push_back(2);
 		m_int_vector.push_back(4);
 
-		//serialize_set("m_point", &m_point);
-		//serialize_set("m_color", &m_color);
+		serialize_add("m_point", &m_point);
+		serialize_add("m_color", &m_color);
 
-		serialize_set("m_some_float_val", &m_some_float_val);
-		serialize_set("m_some_double_val", &m_some_double_val);
-		serialize_set("m_some_string_val", &m_some_string_val);
-		//serialize_set("m_int_vector", &m_int_vector);
+		serialize_add("m_some_float_val", &m_some_float_val);
+		serialize_add("m_some_double_val", &m_some_double_val);
+		serialize_add("m_some_string_val", &m_some_string_val);
+		serialize_add("m_int_vector", &m_int_vector);
 	}
 	Point m_point;
 	Color m_color;
@@ -107,7 +107,7 @@ int main() {
 	}
 	else
 	{	//deserilization example
-		string xml = read_file("serialized_object.xml");
+		string xml = read_file("serialized_object_copy.xml");
 		test.serialize_set(xml);
 	}
 
