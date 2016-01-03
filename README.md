@@ -12,9 +12,9 @@ public:
 		m_some_double_val = 2.34;
 		m_some_string_val = "serialization wooorks";
 		
-		serialize_set("m_some_float_val", &m_some_float_val);
-		serialize_set("m_some_double_val", &m_some_double_val);
-		serialize_set("m_some_string_val", &m_some_string_val);
+		serialize_add("m_some_float_val", &m_some_float_val);
+		serialize_add("m_some_double_val", &m_some_double_val);
+		serialize_add("m_some_string_val", &m_some_string_val);
 	}
 	float 	m_some_float_val;
 	double 	m_some_double_val;
@@ -22,9 +22,9 @@ public:
 	};
 ```
 To make your class serializable you must to inherit from **SerializeItem**. 
-Hereafter you can declare the members with the **serialize_set** method.
-This works also rekurisely (not shown in the example). E.g if you have a mebmer which
-is also a **SerializeItem** you can also add this via **serialize_set**.
+Hereafter you can declare the members with the **serialize_add** method.
+This works also rekursively (not shown in the example). E.g if you have a mebmer which
+is also a **SerializeItem** you can also add this via **serialize_add**.
 
 Now we can *serialize* an object of the above class as following:
 ```c++
