@@ -60,7 +60,7 @@ the following functions:
 
 E.g This is useful if you have you own string class.
 
-Note: this functionality is not full implemented
+Note: this functionality is not fully implemented
 
 
 
