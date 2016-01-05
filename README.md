@@ -29,7 +29,7 @@ is also a **SerializeItem** you can also add this via **serialize_add**.
 Now we can *serialize* an object of the above class as following:
 ```c++
 MyClass test;
-test.serialize_get()->SaveFile("serialized_object.xml");
+string xml_representation = test.serialize_get();
 ```
 
 For *deserialization* we do:
