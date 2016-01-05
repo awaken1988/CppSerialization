@@ -15,10 +15,6 @@ using namespace std;
 
 
 
-
-
-
-
 /*
  *
  * getter function
@@ -82,6 +78,13 @@ template<typename T> bool external_converter_set(const string& value, T& out )
 
 	ss<<value;
 	ss>>out;
+
+	return true; /* if all ok return true */
+}
+
+template<> bool external_converter_set(const string& value, string& out )
+{
+	out = value;
 
 	return true; /* if all ok return true */
 }

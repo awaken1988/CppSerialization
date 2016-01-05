@@ -16,7 +16,7 @@ using namespace std;
 #include "tinyxml2.h"
 using namespace tinyxml2;
 
-
+//not needed for this example
 string read_file(string filename)
 {
 	string ret;
@@ -94,46 +94,55 @@ public:
 	vector<int> m_int_vector;
 };
 
+const char* saved_object =
+"		<CppSerialize>"
+"		    <SerialObject>"
+"		        <SerialObject name=\"m_color\">"
+"		            <CustomObject name=\"b\">100</CustomObject>"
+"		            <CustomObject name=\"g\">150</CustomObject>"
+"		            <CustomObject name=\"r\">155</CustomObject>"
+"		        </SerialObject>"
+"		        <CustomArray name=\"m_int_vector\">"
+"		            <CustomObject>3</CustomObject>"
+"		            <CustomObject>6</CustomObject>"
+"		            <CustomObject>9</CustomObject>"
+"		        </CustomArray>"
+"		        <SerialObject name=\"m_point\">"
+"		            <CustomObject name=\"x\">1</CustomObject>"
+"		            <CustomObject name=\"y\">-1</CustomObject>"
+"		        </SerialObject>"
+"		        <CustomObject name=\"m_some_double_val\">9.87</CustomObject>"
+"		        <CustomObject name=\"m_some_float_val\">8.76</CustomObject>"
+"		        <CustomObject name=\"m_some_string_val\">load from xml succesfully</CustomObject>"
+"		    </SerialObject>"
+"		</CppSerialize>";
+
 
 int main() {
 
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-
 	MyClass test;
 
-	if(false)
-	{	//serialization example
-		test.serialize_get()->SaveFile("serialized_object.xml");
+	try {
+		cout<<"----------------------------------------------"<<endl;
+		cout<<"Serialize the object with their default values"<<endl;
+		cout<<"----------------------------------------------"<<endl;
+
+		string serialized_str = test.serialize_get();
+		cout<<serialized_str<<endl;
+
+
+
+
+		cout<<"----------------------------------------------"<<endl;
+		cout<<"Load values from xml and Serialize to show results as xml"<<endl;
+		cout<<"----------------------------------------------"<<endl;
+		test.serialize_set(saved_object);
+		cout<<test.serialize_get()<<endl;
 	}
-	else
-	{	//deserilization example
-		string xml = read_file("serialized_object_copy.xml");
-		test.serialize_set(xml);
+	catch(cppserialize::SerializeException e) {
+		cout<<e.toString()<<endl;
+		//cout<<"\terrno="<<e.errNum()<<endl;
 	}
 
 	return 0;
 }
-
-
-
-
-/*
-	testcode for tinyxml2
-
-	XMLDocument doc;
-
-	XMLElement* elem_ptr = doc.NewElement("node0");
-	doc.InsertEndChild(elem_ptr);
-	elem_ptr->SetAttribute("isLecker", true);
-
-	for(string i: {"hallo", "das", "ist", "ein", "test"}) {
-	XMLElement* currElem = doc.NewElement(i.c_str());
-
-	currElem->SetText("Hallo wie gehts denn so");
-
-	elem_ptr->InsertEndChild( currElem );
-
-	doc.SaveFile("blaablubb.xml", false);
-
-	}
- */

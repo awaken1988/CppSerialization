@@ -16,6 +16,7 @@
 #include "tinyxml2.h"
 
 #include "SerializeConverters.h"
+#include "SerializeException.h"
 
 namespace cppserialize {
 
@@ -58,9 +59,9 @@ namespace cppserialize {
 		}
 
 		virtual XMLElement* serialize_get(XMLElement* aElement) = 0;
-		virtual XMLDocument* serialize_get() = 0;
-		virtual bool serialize_set(XMLElement* aElement) = 0;
-		virtual bool serialize_set(string xmlContent) = 0;
+		virtual string serialize_get() = 0;
+		virtual void serialize_set(XMLElement* aElement) = 0;
+		virtual void serialize_set(string xmlContent) = 0;
 
 		static const bool is_serializeable = true;
 	};
@@ -86,7 +87,7 @@ namespace cppserialize {
 	{
 		virtual ~ItemWrapperBase(){};
 		virtual XMLElement* get(XMLElement* _outerElement) = 0;
-		virtual bool set(XMLElement* _item) = 0;
+		virtual void set(XMLElement* _item) = 0;
 	};
 
 	template<class T>
@@ -105,11 +106,10 @@ namespace cppserialize {
 			return currElem;
 		}
 
-		virtual bool set(XMLElement* _item)
+		virtual void set(XMLElement* _item)
 		{
 			string value(_item->GetText());
-
-			return external_converter_set<T>(value, *this->obj );
+			external_converter_set<T>(value, *this->obj );
 		}
 	};
 
@@ -122,9 +122,9 @@ namespace cppserialize {
 			return obj->serialize_get(_outerElement);
 		}
 
-		virtual bool set(XMLElement* _item)
+		virtual void set(XMLElement* _item)
 		{
-			return obj->serialize_set(_item);
+			obj->serialize_set(_item);
 		}
 	};
 
@@ -149,7 +149,7 @@ namespace cppserialize {
 			return currElem;
 		}
 
-		virtual bool set(XMLElement* _item)
+		virtual void set(XMLElement* _item)
 		{
 			for(XMLElement* iChild=_item->FirstChildElement();
 					iChild != nullptr; iChild = iChild->NextSiblingElement()) {
@@ -157,11 +157,11 @@ namespace cppserialize {
 				string value(iChild->GetText());
 				T deserialized;
 				if( !external_converter_set<T>(value, deserialized ) )
-					return false;
+					throw SerializeException(	"set: cannot convert \"+string(iChild->GetText())+\"",
+												ErrorNumber::DESERIALIZE_ITEM_NOTFOUND);
+
 				obj->push_back(deserialized);
 			}
-
-			return true;
 		}
 	};
 
@@ -204,8 +204,8 @@ namespace cppserialize {
 			m_content[item_name] = item_wrapper;
 		}
 
-		//TODO: return shared_ptr
-		XMLDocument* serialize_get()
+
+		string serialize_get()
 		{
 			XMLDocument* doc = new XMLDocument();
 
@@ -214,8 +214,11 @@ namespace cppserialize {
 
 			XMLElement* childs = serialize_get(root);
 
+			//extract to string
+			XMLPrinter printer;
+			doc->Print(&printer);
 
-			return doc;
+			return string(printer.CStr());
 		}
 
 		XMLElement* serialize_get(XMLElement* _outerElement)
@@ -232,16 +235,12 @@ namespace cppserialize {
 				XMLElement* childElement = i.second->get(currElem);
 
 				childElement->SetAttribute(ATTRIB_OBJNAME, object_name.c_str());
-
-
-//				cout << "get item " << i.first << "-" << child_val << endl;
-
 			}
 
 			return currElem;
 		}
 
-		virtual bool serialize_set(XMLElement* aElement)
+		virtual void serialize_set(XMLElement* aElement)
 		{
 			for(XMLElement* iChild = aElement->FirstChildElement();
 					iChild != nullptr; iChild = iChild->NextSiblingElement()) {
@@ -251,25 +250,23 @@ namespace cppserialize {
 				auto item_iter = m_content.find( key );
 
 				if( item_iter == m_content.end() )
-					return false;
+					throw SerializeException(	"serialize_set: item \""+string(key)+"\" not found",
+												ErrorNumber::DESERIALIZE_ITEM_NOTFOUND);
 
-
-				if( !item_iter->second->set( iChild ) )
-					return false;
+				item_iter->second->set( iChild );
 			}
-
-			return true;	/* all ok */
 		}
 
-		virtual bool serialize_set(string xmlContent)
+		virtual void serialize_set(string xmlContent)
 		{
 			XMLDocument doc;
 
-			//FIXME: check for xml errors
+			//TODO: Exception needs more details about the xml error
 			if( XML_NO_ERROR != doc.Parse(xmlContent.c_str()) )
-				return false;
+				throw SerializeException(	"serialize_set: tinyxml2 report errors",
+											ErrorNumber::XML_ERROR);
 
-			return this->serialize_set(doc.RootElement()->FirstChildElement());
+			this->serialize_set(doc.RootElement()->FirstChildElement());
 		}
 
 
@@ -287,45 +284,3 @@ namespace cppserialize {
 } /* namespace cppserialize */
 
 #endif /* SERIALIZEBASE_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	//	template<typename E> void SerializeItem::serialize_set(string item_name,
-	//							std::enable_if<std::is_base_of<SerializeBase,E>::value,E>::type* item)
-	//	{
-	//		if( nullptr != dynamic_cast<SerializeBase*>((void*)item) )
-	//		{
-	//			ItemWrapper<SerializeBase>* item_wrapper = new ItemWrapper<SerializeBase>();
-	//			item_wrapper->obj = item;
-	//			m_content[item_name] = item_wrapper;
-	//		}
-	//		else
-	//		{
-	//			ItemWrapper<E>* item_wrapper = new ItemWrapper<E>();
-	//			item_wrapper->obj = item;
-	//			m_content[item_name] = item_wrapper;
-	//		}
-	//	}
