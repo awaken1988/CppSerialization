@@ -1,7 +1,7 @@
 # CppSerialization
-With this lib you are able to serialize your own c++-class to xml. Deserialization is also possible.
+With this lib you are able to serialize your own c++-objects to xml. Deserialization is also possible.
 
-Here is an example
+##Example
 ```c++
 class MyClass : public cppserialize::SerializeItem
 {
@@ -23,8 +23,10 @@ public:
 ```
 To make your class serializable you must to inherit from **SerializeItem**. 
 Hereafter you can declare the members with the **serialize_add** method.
-This works also rekursively (not shown in the example). E.g if you have a mebmer which
+This works also rekursively (not shown in the example). E.g if you have a member which
 is also a **SerializeItem** you can also add this via **serialize_add**.
+
+
 
 Now we can *serialize* an object of the above class as following:
 ```c++
@@ -41,10 +43,24 @@ string xml = read_file("serialized_object.xml");
 test.serialize_set(xml);
 ```
 
-Thats all.
+
+
+##Custom objects
+As you can see it in the example non **SerializeItem** objects included *indirectly*. 
+E.g class members like int, double string, vector<T> ... .
 
 
 
+Basically you can also serialize your own type without inheritin from **SerializeItem**.
+For that use case you have to declare your own converter function as a template specialistation of
+the following functions:
+
+* Convert T to string: ```template<typename T> string external_converter_get(const T& value)```
+* Convert string (from xml) to T: ```template<typename T> bool external_converter_set(const string& value, T& out )```
+
+E.g This is useful if you have you own string class.
+
+Note: this functionality is not full implemented
 
 
 
