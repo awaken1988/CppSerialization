@@ -5,6 +5,8 @@
 #include <map>
 #include <functional>
 #include <tuple>
+#include <vector>
+#include <memory>
 
 
 struct Car {
@@ -42,53 +44,69 @@ struct Vw : public Car {
 };
 
 
+struct TestRootStruct {
+    int a=1;
+    int b=2;
+    int c=3;
+};
 
 
 namespace CppSerialization 
 {
-    struct SerializerInterface {
-        virtual std::string to_string() = 0;
+    struct Node {
+        virtual std::string name() const = 0 ;
     };
 
-    struct DeserializerInterface {
-        virtual void set(std::string) = 0;
+    using NodeShptr = std::shared_ptr<Node>;
+
+    //-----------------------------------------------
+    // Item
+    //-----------------------------------------------
+    struct ItemBase : public Node {
+        virtual std::string to_string()      = 0;
+        virtual void        set(std::string) = 0;
     };
 
-   
-    template<typename T, typename ENIF=void> 
-    struct Serialize : public SerializerInterface {
-
+    template<typename T, typename ENIF=void>
+    struct Item : public ItemBase {
+        virtual std::string to_string()      = 0;
+        virtual void        set(std::string) = 0;
     };
 
-   template<typename T, typename ENIF=void> 
-    struct Deserialize : public DeserializerInterface {
-
-    };
-
-    //int
+    //some base types for test
     template<>
-    struct Serialize<int> : public SerializerInterface {
-        Serialize(int& aData) : data{aData}{}
+    struct Item<int> : public ItemBase {
+        Item() = default;
+        Item(int& aData) : data{&aData} {}
 
         virtual std::string to_string() override {
-            std::stringstream ss; ss << data; return ss.str();
+            return "adsf"; //TODO: do convert
         }
 
-        int& data;
-    };
-
-    template<> 
-    struct Deserialize<int> : public DeserializerInterface {
-        Deserialize(int& aData) : data{aData}{}
-
-        virtual void set(std::string aData) override {
-           data = std::stoi(aData);
+        virtual void set(std::string aStr) override {
+            *data = std::stoi(aStr);
         }
 
-        int& data;
+        int* data = nullptr;
     };
 
+    //-----------------------------------------------
+    // Container
+    //-----------------------------------------------
+    struct ContainerBase : public Node {
+        std::map<std::string, NodeShptr> name_value;   
+    };
 
+    template<typename T>
+    struct Container : public ContainerBase {
+        template<typename C>
+        void add(std::string aName, NodeShptr aNode) {
+            name_value[aName] = aNode;
+        }
+    };
+ 
+   
+ 
     
 
     //virtual base classes
@@ -152,6 +170,10 @@ namespace CppSerialization
 
         map_type mapping;
     };
+
+
+
+
 
 
 }
