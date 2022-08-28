@@ -4,6 +4,32 @@ using namespace std;
 #include "CppSerialization.h"
 using namespace CppSerialization;
 
+
+
+struct STest {
+    int a=0;
+    int b=1;
+};
+
+namespace CppSerialization {
+    template<>
+    struct BuilderTrait<STest> {
+        NodeShptr buildSerdeNode(STest& aData) {
+            auto node = std::make_shared<Container>();
+
+            node->add("a", std::make_shared<Item<int>>(aData.a) );
+
+            node->addItem("a", aData.a);
+
+
+            return nullptr;
+        }
+    };
+}
+
+ 
+
+
 int main()
 {
     cout<<"test"<<endl;
@@ -15,6 +41,12 @@ int main()
 
     //should crash
     cout << "Skodaaaa: " << cars_info.create("Skodaaaa")->drive() << endl;
+
+
+
+
+
+
 
     return 0;
 }

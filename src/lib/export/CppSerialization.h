@@ -53,8 +53,15 @@ struct TestRootStruct {
 
 namespace CppSerialization 
 {
+    enum class eNodeType {
+        Item,           //aka Leaf node with pure data
+        Container,      //node which have child nodes
+    };
+
     struct Node {
-        virtual std::string name() const = 0 ;
+        virtual ~Node(){}
+
+        //virtual std::string type_name() const = 0 ;
     };
 
     using NodeShptr = std::shared_ptr<Node>;
@@ -67,7 +74,7 @@ namespace CppSerialization
         virtual void        set(std::string) = 0;
     };
 
-    template<typename T, typename ENIF=void>
+    template<typename T>    //, typename ENIF=void
     struct Item : public ItemBase {
         virtual std::string to_string()      = 0;
         virtual void        set(std::string) = 0;
@@ -77,7 +84,8 @@ namespace CppSerialization
     template<>
     struct Item<int> : public ItemBase {
         Item() = default;
-        Item(int& aData) : data{&aData} {}
+        Item(int& aData) 
+            : data{&aData} {}
 
         virtual std::string to_string() override {
             return "adsf"; //TODO: do convert
@@ -87,27 +95,40 @@ namespace CppSerialization
             *data = std::stoi(aStr);
         }
 
-        int* data = nullptr;
+        int*        data = nullptr;
     };
+
+  
 
     //-----------------------------------------------
     // Container
     //-----------------------------------------------
-    struct ContainerBase : public Node {
-        std::map<std::string, NodeShptr> name_value;   
-    };
+    struct Container : public Node {
 
-    template<typename T>
-    struct Container : public ContainerBase {
-        template<typename C>
         void add(std::string aName, NodeShptr aNode) {
             name_value[aName] = aNode;
         }
+
+        template<typename T>
+        void addItem(std::string aName, T& aData) {
+            auto child_node = std::make_shared<Item<T>>();
+            add(aName, child_node);
+        }
+
+        std::map<std::string, NodeShptr> name_value;   
     };
- 
-   
- 
-    
+
+    //-----------------------------------------------
+    // Builder
+    //-----------------------------------------------
+    template<typename T>
+    struct BuilderTrait {
+        NodeShptr buildSerdeNode(T& aData) {
+            return nullptr;
+        }
+    };
+
+
 
     //virtual base classes
 
