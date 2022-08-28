@@ -53,18 +53,38 @@ struct TestRootStruct {
 
 namespace CppSerialization 
 {
-    enum class eNodeType {
-        Item,           //aka Leaf node with pure data
-        Container,      //node which have child nodes
-    };
+    //helper
+    std::string indent(size_t aDept) {
+        std::string ret;
+        for(size_t i=0; i<aDept; i++) {
+            ret += "    ";
+        }
+        return ret;
+    }
+
+
+
+
+
+
+
 
     struct Node {
         virtual ~Node(){}
 
+        virtual std::string debugString() {
+            return "<no_debug_info>";
+        }
+
         //virtual std::string type_name() const = 0 ;
+
+        using shptr = std::shared_ptr<Node>;
     };
 
     using NodeShptr = std::shared_ptr<Node>;
+
+    template<typename T>
+    struct ItemTraits;
 
     //-----------------------------------------------
     // Item
@@ -72,62 +92,99 @@ namespace CppSerialization
     struct ItemBase : public Node {
         virtual std::string to_string()      = 0;
         virtual void        set(std::string) = 0;
+
+        using shptr = std::shared_ptr<ItemBase>;
     };
 
     template<typename T>    //, typename ENIF=void
     struct Item : public ItemBase {
-        virtual std::string to_string()      = 0;
-        virtual void        set(std::string) = 0;
-    };
+        T* data=nullptr;
 
-    //some base types for test
-    template<>
-    struct Item<int> : public ItemBase {
-        Item() = default;
-        Item(int& aData) 
-            : data{&aData} {}
+        Item(T* aData) : data{aData} {
 
-        virtual std::string to_string() override {
-            return "adsf"; //TODO: do convert
+            std::cout << "*" << data << std::endl;
         }
 
-        virtual void set(std::string aStr) override {
-            *data = std::stoi(aStr);
+        virtual std::string to_string() {
+            return ItemTraits<T>::toString(*data); 
         }
 
-        int*        data = nullptr;
-    };
+        virtual void set(std::string aStr) {
+            *data = ItemTraits<T>::fromString(aStr);
+        }
 
-  
+        std::shared_ptr<Item<T>> toSharedPtr() {
+            return std::make_shared<Item<T>>(*this);
+        }
+
+        virtual std::string debugString() override {
+            std::stringstream ss; ss<<data; return ss.str();
+        }
+    };
 
     //-----------------------------------------------
     // Container
     //-----------------------------------------------
-    struct Container : public Node {
+    struct ContainerBase : public Node {
+        std::map<std::string, Node::shptr> name_value;  
 
-        void add(std::string aName, NodeShptr aNode) {
+        void add(std::string aName, Node::shptr aNode) {
             name_value[aName] = aNode;
-        }
-
-        template<typename T>
-        void addItem(std::string aName, T& aData) {
-            auto child_node = std::make_shared<Item<T>>();
-            add(aName, child_node);
-        }
-
-        std::map<std::string, NodeShptr> name_value;   
+        }  
     };
 
+
     //-----------------------------------------------
-    // Builder
+    // Traits
     //-----------------------------------------------
     template<typename T>
-    struct BuilderTrait {
-        NodeShptr buildSerdeNode(T& aData) {
-            return nullptr;
+    struct ItemTraits {
+        static T           fromString(std::string aStr);
+        static std::string toString(T& aData);
+    };
+
+    template<typename T>
+    struct ContainerTraits {
+        static std::map<std::string, ItemBase::shptr> containerChilds(T* aData);
+    };
+
+    template<typename T>
+    struct Container : public ContainerBase {
+        Container(T* aData) {
+            auto childs = ContainerTraits<T>::containerChilds(aData);
+            for(auto iChild: childs) {
+                //std::cout << iChild.first << " - " << iChild.second << std::endl;
+                add(iChild.first, iChild.second);
+            }
+        }
+
+        std::shared_ptr<Container<T>> toSharedPtr() {
+            return std::make_shared<Container<T>>(*this);
         }
     };
 
+
+
+  
+    template<typename T>
+    Node::shptr create(T& aData) {
+        return std::shared_ptr<Container<T>>(new Container<T>{&aData});
+    }
+
+    void traverse(std::string aName, Node::shptr aNode, size_t aDept=0) {
+        std::cout << indent(aDept) << " Name=" << aName << "; Debug=" << aNode->debugString() << std::endl ;
+
+        if(auto container = std::dynamic_pointer_cast<ContainerBase>(aNode); container) {
+            for(auto i_child: container->name_value) {
+                traverse(i_child.first, i_child.second, aDept+1);
+            }
+        }
+        else if(auto item = std::dynamic_pointer_cast<ItemBase>(aNode); item) {
+            
+        }
+
+        
+    }
 
 
     //virtual base classes
@@ -173,8 +230,6 @@ namespace CppSerialization
                 traverse_child<IDX+1, T_PARENT, T_CHILD...>(aOut);
             }
         }
-
-       
     }
 
     template<typename T_PARENT, typename... T_CHILD>
