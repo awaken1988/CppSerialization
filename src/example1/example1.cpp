@@ -19,8 +19,9 @@ struct STest {
 };
 
 namespace CppSerialization {
-    template<>
-    struct ItemTraits<int> {
+    template<> struct NodeTrait<int> {
+        static constexpr auto node_type = eNodeType::ITEM;
+
         static int fromString(std::string aStr) {
             return std::stoi(aStr);
         }
@@ -31,26 +32,28 @@ namespace CppSerialization {
         }
     };
 
-    template<>
-    struct ContainerTraits<STest> {
-        static std::map<std::string, Node::shptr> containerChilds(STest* aData) {
-            std::map<std::string, Node::shptr> ret;
-            ret["a"]     = Item<int>(&(aData->a)).toSharedPtr();
-            ret["b"]     = Item<int>(&(aData->b)).toSharedPtr();
-            ret["inner"] = Container<SInner>(&aData->inner).toSharedPtr();
-            return ret;
+    template<> struct NodeTrait<SInner> {
+        static constexpr auto node_type = eNodeType::CONTAINER;
+        static std::map<std::string, Node::shptr> containerChilds(SInner* aData) {
+            return ContainerBuilder{}
+                .add("i0", &(aData->i0))
+                .add("i1", &(aData->i1))
+                .build();
         }
     };
 
-    template<>
-    struct ContainerTraits<SInner> {
-        static std::map<std::string, Node::shptr> containerChilds(SInner* aData) {
-            std::map<std::string, Node::shptr> ret;
-            ret["i0"] = Item<int>(&(aData->i0)).toSharedPtr();
-            ret["i1"] = Item<int>(&(aData->i1)).toSharedPtr();
-            return ret;
+    template<> struct NodeTrait<STest> {
+        static constexpr auto node_type = eNodeType::CONTAINER;
+        static container_map containerChilds(STest* aData) {
+            return ContainerBuilder{}
+                .add("a",     &aData->a)
+                .add("b",     &aData->b)
+                .add("inner", &aData->inner)
+                .build();
         }
     };
+
+
 }
 
  
@@ -73,6 +76,9 @@ int main()
     CppSerialization::traverse("<root>", root);
 
 
+    ContainerBuilder a;
+
+   
 
 
     return 0;

@@ -66,7 +66,9 @@ namespace CppSerialization
 
 
 
-
+    enum class eNodeType {
+        ITEM, CONTAINER,
+    };
 
 
     struct Node {
@@ -80,6 +82,9 @@ namespace CppSerialization
 
         using shptr = std::shared_ptr<Node>;
     };
+
+    template<typename T>
+    struct NodeTrait {};
 
     using NodeShptr = std::shared_ptr<Node>;
 
@@ -106,11 +111,11 @@ namespace CppSerialization
         }
 
         virtual std::string to_string() {
-            return ItemTraits<T>::toString(*data); 
+            return NodeTrait<T>::toString(*data); 
         }
 
         virtual void set(std::string aStr) {
-            *data = ItemTraits<T>::fromString(aStr);
+            *data = NodeTrait<T>::fromString(aStr);
         }
 
         std::shared_ptr<Item<T>> toSharedPtr() {
@@ -125,8 +130,10 @@ namespace CppSerialization
     //-----------------------------------------------
     // Container
     //-----------------------------------------------
+    using container_map = std::map<std::string, Node::shptr>;
+
     struct ContainerBase : public Node {
-        std::map<std::string, Node::shptr> name_value;  
+        container_map name_value;  
 
         void add(std::string aName, Node::shptr aNode) {
             name_value[aName] = aNode;
@@ -138,20 +145,9 @@ namespace CppSerialization
     // Traits
     //-----------------------------------------------
     template<typename T>
-    struct ItemTraits {
-        static T           fromString(std::string aStr);
-        static std::string toString(T& aData);
-    };
-
-    template<typename T>
-    struct ContainerTraits {
-        static std::map<std::string, ItemBase::shptr> containerChilds(T* aData);
-    };
-
-    template<typename T>
     struct Container : public ContainerBase {
         Container(T* aData) {
-            auto childs = ContainerTraits<T>::containerChilds(aData);
+            auto childs = NodeTrait<T>::containerChilds(aData);
             for(auto iChild: childs) {
                 //std::cout << iChild.first << " - " << iChild.second << std::endl;
                 add(iChild.first, iChild.second);
@@ -163,7 +159,7 @@ namespace CppSerialization
         }
     };
 
-
+ 
 
   
     template<typename T>
@@ -182,9 +178,34 @@ namespace CppSerialization
         else if(auto item = std::dynamic_pointer_cast<ItemBase>(aNode); item) {
             
         }
-
-        
     }
+
+    //-----------------------------------------------
+    // Tells if its an Item, Container...
+    //-----------------------------------------------
+    struct ContainerBuilder {
+
+        template<typename T>
+            requires (NodeTrait<T>::node_type == eNodeType::CONTAINER)
+        ContainerBuilder& add(const std::string& aName, T* aContainer) {
+            data[aName] = std::make_shared<Container<T>>(aContainer);
+            return *this;
+        }
+
+        template<typename T>
+            requires (NodeTrait<T>::node_type == eNodeType::ITEM)
+        ContainerBuilder& add(const std::string& aName, T* aItem) {
+            data[aName] = std::make_shared<Item<T>>(aItem);
+            return *this;
+        }
+
+        container_map build() {
+            return data;
+        }
+
+        container_map data;
+    };
+
 
 
     //virtual base classes
