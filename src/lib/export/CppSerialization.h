@@ -64,12 +64,9 @@ namespace CppSerialization
 
 
 
-
-
     enum class eNodeType {
-        ITEM, CONTAINER,
+        ITEM, CONTAINER, DYNAMIC_CONTAINER,
     };
-
 
     struct Node {
         virtual ~Node(){}
@@ -83,7 +80,7 @@ namespace CppSerialization
         using shptr = std::shared_ptr<Node>;
     };
 
-    template<typename T>
+    template<typename T, typename E=void>
     struct NodeTrait {};
 
     using NodeShptr = std::shared_ptr<Node>;
@@ -138,6 +135,16 @@ namespace CppSerialization
         void add(std::string aName, Node::shptr aNode) {
             name_value[aName] = aNode;
         }  
+    };
+
+    //-----------------------------------------------
+    // DynamicContainer
+    //  like vector, list...
+    //-----------------------------------------------
+    struct DynamicContainerBase {
+        container_map name_value;
+
+
     };
 
 

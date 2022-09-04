@@ -1,5 +1,12 @@
+//References
+//  https://stackoverflow.com/questions/16337610/how-to-know-if-a-type-is-a-specialization-of-stdvector
+//
+
+
 #include <iostream>
 #include <sstream>
+#include <vector>
+#include <list>
 using namespace std;
 
 #include "CppSerialization.h"
@@ -56,7 +63,12 @@ namespace CppSerialization {
 
 }
 
- 
+template<typename T, template<typename...> typename S>
+struct is_dynamic_cotainer : public std::false_type {  };
+
+template<template<typename...> typename T, typename... S>
+struct is_dynamic_cotainer<T<S...>, T> : public std::true_type {  };
+
 
 
 int main()
@@ -76,9 +88,18 @@ int main()
     CppSerialization::traverse("<root>", root);
 
 
-    ContainerBuilder a;
-
    
+
+    using ivec  = std::vector<int>;
+    using ilist = std::list<int> ;
+
+    std::cout << "is_std_vector<a>" << is_dynamic_cotainer<ivec,std::vector>::value << std::endl;
+    std::cout << "is_std_vector<a>" << is_dynamic_cotainer<ilist,std::vector>::value << std::endl;
+    std::cout << "is_std_vector<a>" << is_dynamic_cotainer<ivec,std::list>::value << std::endl;
+    std::cout << "is_std_vector<a>" << is_dynamic_cotainer<ilist,std::list>::value << std::endl;
+
+    
+
 
 
     return 0;
